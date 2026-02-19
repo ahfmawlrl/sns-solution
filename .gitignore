@@ -1,0 +1,62 @@
+# ── Virtual environments ──
+.venv/
+venv/
+env/
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+*.cover
+
+# ── Node ──
+node_modules/
+dist/
+.vite/
+*.local
+
+# ── Environment ──
+.env
+.env.local
+.env.*.local
+
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── Docker volumes (local) ──
+postgres_data/
+redis_data/
+minio_data/
+
+# ── Logs ──
+*.log
+
+# ── Poetry ──
+poetry.lock
+
+# ── Coverage ──
+coverage/
+
+# ── Claude Code ──
+.claude/
+
+# ── Windows artifacts ──
+nul

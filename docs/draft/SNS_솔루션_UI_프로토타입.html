@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SNS 운영 대행 통합 관리 솔루션 - UI 프로토타입</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0B0F1A;
+  --bg-secondary: #111827;
+  --bg-card: #1A2035;
+  --bg-card-hover: #1F2844;
+  --bg-input: #0F172A;
+  --border: #1E293B;
+  --border-light: #334155;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --accent: #3B82F6;
+  --accent-light: #60A5FA;
+  --accent-glow: rgba(59, 130, 246, 0.15);
+  --green: #10B981;
+  --green-bg: rgba(16, 185, 129, 0.12);
+  --orange: #F59E0B;
+  --orange-bg: rgba(245, 158, 11, 0.12);
+  --red: #EF4444;
+  --red-bg: rgba(239, 68, 68, 0.12);
+  --purple: #8B5CF6;
+  --purple-bg: rgba(139, 92, 246, 0.12);
+  --cyan: #06B6D4;
+  --sidebar-w: 240px;
+  --sidebar-collapsed: 68px;
+  --header-h: 56px;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Noto Sans KR', 'Plus Jakarta Sans', sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+
+/* ===== LAYOUT ===== */
+.app { display: flex; height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-w); min-width: var(--sidebar-w); height: 100vh;
+  background: var(--bg-secondary); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; transition: var(--transition); z-index: 100;
+  position: relative;
+}
+.sidebar.collapsed { width: var(--sidebar-collapsed); min-width: var(--sidebar-collapsed); }
+
+.sidebar-logo {
+  height: var(--header-h); display: flex; align-items: center; padding: 0 16px; gap: 10px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.sidebar-logo .logo-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), #818CF8);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.5px;
+}
+.sidebar-logo .logo-text { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; transition: var(--transition); }
+.sidebar.collapsed .logo-text { opacity: 0; width: 0; }
+.sidebar.collapsed .sidebar-logo { justify-content: center; padding: 0; }
+
+.sidebar-nav { flex: 1; overflow-y: auto; padding: 8px; }
+.sidebar-nav::-webkit-scrollbar { width: 0; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: var(--transition); margin-bottom: 2px; position: relative; user-select: none;
+  color: var(--text-secondary); font-size: 13.5px; font-weight: 500; white-space: nowrap;
+}
+.nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
+.nav-item.active { background: var(--accent-glow); color: var(--accent-light); }
+.nav-item.active::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 20px; background: var(--accent); border-radius: 0 3px 3px 0;
+}
+.nav-item .nav-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+.nav-item .nav-label { overflow: hidden; transition: var(--transition); }
+.sidebar.collapsed .nav-label { opacity: 0; width: 0; }
+.sidebar.collapsed .nav-item { justify-content: center; padding: 10px; }
+.nav-item .nav-badge {
+  margin-left: auto; background: var(--red); color: #fff; font-size: 10px; font-weight: 700;
+  padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center;
+}
+.sidebar.collapsed .nav-badge { display: none; }
+
+.sidebar-bottom {
+  padding: 12px; border-top: 1px solid var(--border); flex-shrink: 0;
+}
+.ai-chat-btn {
+  width: 100%; padding: 10px; border: 1px solid rgba(139, 92, 246, 0.3); border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+  color: #C4B5FD; cursor: pointer; font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; gap: 8px; justify-content: center; transition: var(--transition);
+}
+.ai-chat-btn:hover { background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2)); border-color: rgba(139, 92, 246, 0.5); }
+.sidebar.collapsed .ai-chat-btn .btn-text { display: none; }
+
+/* Main Area */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Header */
+.header {
+  height: var(--header-h); display: flex; align-items: center; padding: 0 24px; gap: 16px;
+  border-bottom: 1px solid var(--border); background: var(--bg-secondary); flex-shrink: 0;
+}
+.toggle-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 18px; padding: 4px; transition: var(--transition); }
+.toggle-btn:hover { color: var(--text-primary); }
+
+.client-selector {
+  display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg-input); cursor: pointer; transition: var(--transition);
+}
+.client-selector:hover { border-color: var(--border-light); }
+.client-avatar { width: 24px; height: 24px; border-radius: 6px; background: linear-gradient(135deg, #F59E0B, #EF4444); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
+.client-name { font-size: 13px; font-weight: 600; }
+.client-arrow { color: var(--text-muted); font-size: 10px; }
+
+.search-bar {
+  flex: 1; max-width: 400px; position: relative;
+}
+.search-bar input {
+  width: 100%; padding: 8px 12px 8px 36px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg-input); color: var(--text-primary);
+  font-size: 13px; outline: none; transition: var(--transition);
+}
+.search-bar input::placeholder { color: var(--text-muted); }
+.search-bar input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.search-bar .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+
+.header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.header-icon-btn {
+  width: 36px; height: 36px; border-radius: var(--radius-sm); border: none;
+  background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center; position: relative; transition: var(--transition);
+}
+.header-icon-btn:hover { background: var(--bg-card); color: var(--text-primary); }
+.header-icon-btn .notif-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; background: var(--red); border-radius: 50%; border: 2px solid var(--bg-secondary); }
+.profile-btn {
+  width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border);
+  background: linear-gradient(135deg, var(--accent), var(--purple)); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff;
+}
+
+/* Content Area */
+.content { flex: 1; overflow-y: auto; padding: 24px; background: var(--bg-primary); }
+.content::-webkit-scrollbar { width: 6px; }
+.content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Sub Navigation Tabs */
+.sub-tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--bg-secondary); padding: 4px; border-radius: var(--radius); }
+.sub-tab {
+  padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
+  color: var(--text-secondary); cursor: pointer; transition: var(--transition); border: none; background: none;
+}
+.sub-tab:hover { color: var(--text-primary); }
+.sub-tab.active { background: var(--bg-card); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+
+/* Stats Cards */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px 20px; transition: var(--transition); position: relative; overflow: hidden;
+}
+.stat-card:hover { border-color: var(--border-light); transform: translateY(-1px); }
+.stat-card .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-bottom: 8px; }
+.stat-card .stat-value { font-size: 28px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; margin-bottom: 4px; }
+.stat-card .stat-change { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.stat-card .stat-change.up { color: var(--green); }
+.stat-card .stat-change.down { color: var(--red); }
+.stat-card .stat-icon { position: absolute; top: 16px; right: 16px; font-size: 20px; opacity: 0.5; }
+
+/* Chart placeholder */
+.chart-section { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; min-height: 280px;
+}
+.chart-card-full { grid-column: 1 / -1; }
+.chart-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+.chart-title .period { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+
+/* Fake chart bars */
+.bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 180px; padding-top: 20px; }
+.bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.bar-group .bar { width: 100%; max-width: 32px; border-radius: 4px 4px 0 0; transition: var(--transition); }
+.bar-group .bar:hover { opacity: 0.8; }
+.bar-group .bar-label { font-size: 10px; color: var(--text-muted); }
+
+/* Donut chart fake */
+.donut-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+.donut { width: 140px; height: 140px; border-radius: 50%; position: relative; margin-bottom: 16px;
+  background: conic-gradient(var(--green) 0% 42%, var(--accent) 42% 71%, var(--orange) 71% 88%, var(--red) 88% 100%);
+}
+.donut::after { content: ''; position: absolute; inset: 30px; background: var(--bg-card); border-radius: 50%; }
+.donut-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1; font-size: 22px; font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* Right Panel */
+.right-panel-section { margin-bottom: 24px; }
+.right-panel-section .section-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+/* Activity / Todo items */
+.todo-list { display: flex; flex-direction: column; gap: 8px; }
+.todo-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm);
+  background: var(--bg-card); border: 1px solid var(--border); font-size: 13px; transition: var(--transition);
+}
+.todo-item:hover { border-color: var(--border-light); }
+.todo-check { width: 16px; height: 16px; border-radius: 4px; border: 2px solid var(--border-light); cursor: pointer; flex-shrink: 0; transition: var(--transition); }
+.todo-check.done { background: var(--green); border-color: var(--green); }
+.todo-text { flex: 1; }
+.todo-text.done { text-decoration: line-through; color: var(--text-muted); }
+.todo-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+.badge-urgent { background: var(--red-bg); color: var(--red); }
+.badge-warning { background: var(--orange-bg); color: var(--orange); }
+.badge-info { background: var(--accent-glow); color: var(--accent-light); }
+.badge-success { background: var(--green-bg); color: var(--green); }
+
+/* AI Insight Card */
+.ai-insight {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08));
+  border: 1px solid rgba(139, 92, 246, 0.2); border-radius: var(--radius); padding: 16px; margin-bottom: 24px;
+}
+.ai-insight .ai-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: #C4B5FD; }
+.ai-insight .ai-body { font-size: 13px; line-height: 1.7; color: var(--text-secondary); }
+.ai-insight .ai-body strong { color: var(--text-primary); }
+
+/* Content Calendar */
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 24px; }
+.cal-header { background: var(--bg-secondary); padding: 10px; text-align: center; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.cal-cell {
+  background: var(--bg-card); padding: 8px; min-height: 100px; cursor: pointer; transition: var(--transition);
+}
+.cal-cell:hover { background: var(--bg-card-hover); }
+.cal-cell .cal-date { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.cal-cell.today .cal-date { color: var(--accent-light); font-weight: 700; }
+.cal-event {
+  font-size: 10px; padding: 3px 6px; border-radius: 3px; margin-bottom: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;
+}
+.cal-event.draft { background: rgba(100,116,139,0.2); color: #94A3B8; }
+.cal-event.review { background: var(--orange-bg); color: var(--orange); }
+.cal-event.approved { background: var(--green-bg); color: var(--green); }
+.cal-event.published { background: rgba(59,130,246,0.15); color: var(--accent-light); }
+
+/* Kanban Board */
+.kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.kanban-col { background: var(--bg-secondary); border-radius: var(--radius); padding: 12px; border: 1px solid var(--border); }
+.kanban-col-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.kanban-col-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.kanban-count { font-size: 11px; background: var(--bg-card); padding: 1px 8px; border-radius: 10px; color: var(--text-muted); }
+.kanban-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px; margin-bottom: 8px; cursor: pointer; transition: var(--transition);
+}
+.kanban-card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.kanban-card .kc-thumb { width: 100%; height: 80px; border-radius: 4px; margin-bottom: 8px; object-fit: cover; }
+.kanban-card .kc-title { font-size: 12px; font-weight: 600; margin-bottom: 6px; line-height: 1.4; }
+.kanban-card .kc-meta { display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--text-muted); }
+.kanban-card .kc-platforms { display: flex; gap: 4px; }
+.kanban-card .kc-platforms span { font-size: 12px; }
+
+/* Inbox */
+.inbox-layout { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
+.inbox-list { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; max-height: 500px; overflow-y: auto; }
+.inbox-list::-webkit-scrollbar { width: 4px; }
+.inbox-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.inbox-item { padding: 12px 14px; border-bottom: 1px solid var(--border); cursor: pointer; transition: var(--transition); }
+.inbox-item:hover { background: var(--bg-card-hover); }
+.inbox-item.active { background: var(--accent-glow); border-left: 3px solid var(--accent); }
+.inbox-item .inbox-platform { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }
+.inbox-item .inbox-user { font-size: 13px; font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
+.inbox-item .inbox-preview { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inbox-item .sentiment { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.inbox-item .sentiment.pos { background: var(--green); }
+.inbox-item .sentiment.neg { background: var(--red); }
+.inbox-item .sentiment.neu { background: var(--orange); }
+
+.inbox-detail { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.inbox-detail .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.inbox-detail .detail-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--purple-bg); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.inbox-detail .detail-info h4 { font-size: 14px; font-weight: 600; }
+.inbox-detail .detail-info span { font-size: 12px; color: var(--text-muted); }
+.inbox-detail .detail-msg { font-size: 13px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 16px; padding: 14px; background: var(--bg-input); border-radius: var(--radius-sm); }
+.inbox-detail .ai-draft { padding: 14px; background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(59,130,246,0.06)); border: 1px solid rgba(139,92,246,0.15); border-radius: var(--radius-sm); }
+.inbox-detail .ai-draft-label { font-size: 11px; color: #C4B5FD; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.inbox-detail .ai-draft-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+.reply-actions { display: flex; gap: 8px; margin-top: 12px; }
+.btn { padding: 8px 16px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: var(--transition); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-light); }
+.btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--border-light); color: var(--text-primary); }
+
+/* Analytics specific */
+.kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+.kpi-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; }
+.kpi-card .kpi-val { font-size: 24px; font-weight: 700; font-family: 'Plus Jakarta Sans'; margin: 6px 0; }
+.kpi-card .kpi-label { font-size: 11px; color: var(--text-muted); }
+.kpi-card .kpi-delta { font-size: 11px; font-weight: 600; }
+
+/* Table */
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.data-table th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); }
+.data-table td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--bg-card-hover); }
+
+/* AI Tools page */
+.ai-tools-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+.ai-tool-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 24px; cursor: pointer; transition: var(--transition); position: relative; overflow: hidden;
+}
+.ai-tool-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+.ai-tool-card .tool-icon { font-size: 28px; margin-bottom: 12px; }
+.ai-tool-card .tool-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.ai-tool-card .tool-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.ai-tool-card::after {
+  content: ''; position: absolute; top: -50%; right: -50%; width: 100%; height: 100%;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%); opacity: 0; transition: var(--transition);
+}
+.ai-tool-card:hover::after { opacity: 1; }
+
+/* Chatbot */
+.chatbot-panel {
+  position: fixed; bottom: 80px; right: 24px; width: 380px; height: 500px;
+  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4); display: none; flex-direction: column; z-index: 200;
+  overflow: hidden;
+}
+.chatbot-panel.open { display: flex; animation: slideUp 0.3s ease; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.chatbot-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.chatbot-header h3 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.chatbot-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; }
+.chatbot-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.chat-msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; }
+.chat-msg.bot { background: var(--bg-card); border: 1px solid var(--border); align-self: flex-start; }
+.chat-msg.user { background: var(--accent); color: #fff; align-self: flex-end; border-radius: 12px 12px 4px 12px; }
+.chatbot-input { padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+.chatbot-input input { flex: 1; padding: 10px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-primary); font-size: 13px; outline: none; }
+.chatbot-input input:focus { border-color: var(--accent); }
+.chatbot-input button { width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--accent); color: #fff; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+
+.chatbot-fab {
+  position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple), var(--accent)); color: #fff; border: none;
+  cursor: pointer; font-size: 22px; box-shadow: 0 4px 20px rgba(139,92,246,0.4); z-index: 200;
+  display: flex; align-items: center; justify-content: center; transition: var(--transition);
+}
+.chatbot-fab:hover { transform: scale(1.08); }
+
+/* Page title */
+.page-header { margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+.page-title { font-size: 20px; font-weight: 700; }
+.page-desc { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+/* Gradient bars for charts */
+.grad-bar { background: linear-gradient(to top, var(--accent), var(--purple)); }
+.grad-bar-2 { background: linear-gradient(to top, var(--green), #06D6A0); }
+.grad-bar-3 { background: linear-gradient(to top, var(--orange), #FBBF24); }
+
+/* Screen label overlay */
+.screen-label {
+  position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
+  background: rgba(139,92,246,0.9); color: #fff; padding: 4px 16px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; z-index: 300; backdrop-filter: blur(8px);
+  letter-spacing: 0.5px; animation: fadeIn 0.5s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+/* Sentiment mini chart */
+.sentiment-bars { display: flex; height: 8px; border-radius: 4px; overflow: hidden; width: 100%; margin: 8px 0; }
+.sentiment-bars .s-bar { transition: var(--transition); }
+</style>
+</head>
+<body>
+
+<div class="screen-label">🎨 SNS 통합 관리 솔루션 — Interactive UI Prototype</div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">S+</div>
+      <span class="logo-text">SNS Manager</span>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav">
+      <div class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+        <span class="nav-icon">📊</span><span class="nav-label">대시보드</span>
+      </div>
+      <div class="nav-item" data-page="content" onclick="navigateTo('content')">
+        <span class="nav-icon">✏️</span><span class="nav-label">콘텐츠 관리</span><span class="nav-badge">3</span>
+      </div>
+      <div class="nav-item" data-page="publish" onclick="navigateTo('publish')">
+        <span class="nav-icon">🚀</span><span class="nav-label">게시 운영</span>
+      </div>
+      <div class="nav-item" data-page="community" onclick="navigateTo('community')">
+        <span class="nav-icon">💬</span><span class="nav-label">커뮤니티 관리</span><span class="nav-badge">12</span>
+      </div>
+      <div class="nav-item" data-page="analytics" onclick="navigateTo('analytics')">
+        <span class="nav-icon">📈</span><span class="nav-label">성과 분석</span>
+      </div>
+      <div class="nav-item" data-page="clients" onclick="navigateTo('clients')">
+        <span class="nav-icon">👤</span><span class="nav-label">클라이언트</span>
+      </div>
+      <div class="nav-item" data-page="aitools" onclick="navigateTo('aitools')">
+        <span class="nav-icon">🤖</span><span class="nav-label">AI 도구</span>
+      </div>
+      <div class="nav-item" data-page="settings" onclick="navigateTo('settings')">
+        <span class="nav-icon">⚙️</span><span class="nav-label">설정</span>
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="ai-chat-btn" onclick="toggleChatbot()">
+        <span>✨</span><span class="btn-text">AI 질의 챗봇</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- HEADER -->
+    <header class="header">
+      <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+      <div class="client-selector">
+        <div class="client-avatar">B</div>
+        <span class="client-name">브랜드코리아</span>
+        <span class="client-arrow">▾</span>
+      </div>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="콘텐츠, 클라이언트, 지표 검색...">
+      </div>
+      <div class="header-actions">
+        <button class="header-icon-btn">
+          🔔<span class="notif-dot"></span>
+        </button>
+        <div class="profile-btn">JH</div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content" id="contentArea"></div>
+  </div>
+</div>
+
+<!-- AI CHATBOT -->
+<button class="chatbot-fab" onclick="toggleChatbot()">✨</button>
+<div class="chatbot-panel" id="chatbot">
+  <div class="chatbot-header">
+    <h3>✨ AI 어시스턴트</h3>
+    <button class="chatbot-close" onclick="toggleChatbot()">✕</button>
+  </div>
+  <div class="chatbot-messages">
+    <div class="chat-msg bot">안녕하세요! 성과 데이터, 콘텐츠 현황 등 궁금한 것을 자연어로 질문해 주세요.</div>
+    <div class="chat-msg user">지난주 인스타 베스트 게시물은?</div>
+    <div class="chat-msg bot">지난주 인스타그램 최고 성과 게시물은 <strong>"봄 신메뉴 출시 릴스"</strong>입니다.<br><br>📊 도달: <strong>48,230</strong> (+127%)<br>❤️ 참여율: <strong>8.7%</strong><br>💬 댓글: <strong>234</strong>건<br><br>비결: 릴스 형식 + 트렌드 음악 활용이 도달 상승의 주요 원인으로 분석됩니다.</div>
+  </div>
+  <div class="chatbot-input">
+    <input type="text" placeholder="질문을 입력하세요...">
+    <button>→</button>
+  </div>
+</div>
+
+<script>
+// ===== PAGE TEMPLATES =====
+const pages = {};
+
+// DASHBOARD
+pages.dashboard = () => `
+  <div class="page-header">
+    <div><div class="page-title">대시보드</div><div class="page-desc">오늘의 운영 현황을 한눈에 확인하세요</div></div>
+  </div>
+  <div class="sub-tabs">
+    <button class="sub-tab active">전체 현황 요약</button>
+    <button class="sub-tab">클라이언트별 현황</button>
+    <button class="sub-tab">AI 인사이트 요약</button>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-label">오늘 게시 예정</div>
+      <div class="stat-value">7</div>
+      <div class="stat-change up">▲ 2건 증가 (vs 어제)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">✅</div>
+      <div class="stat-label">승인 대기</div>
+      <div class="stat-value" style="color:var(--orange)">3</div>
+      <div class="stat-change" style="color:var(--orange)">⏳ 2건 긴급</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">💬</div>
+      <div class="stat-label">미처리 댓글</div>
+      <div class="stat-value" style="color:var(--red)">12</div>
+      <div class="stat-change down">부정 감성 33%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📈</div>
+      <div class="stat-label">주간 참여율</div>
+      <div class="stat-value" style="color:var(--green)">4.8%</div>
+      <div class="stat-change up">▲ 0.7% 상승</div>
+    </div>
+  </div>
+  <div class="ai-insight">
+    <div class="ai-header">✨ AI 인사이트 요약</div>
+    <div class="ai-body">이번 주 <strong>릴스 도달이 32% 증가</strong>했습니다. 주요 원인은 트렌드 음악 활용 콘텐츠가 3건 연속 고성과를 기록한 것입니다. <strong>다음 주 릴스 비중을 40%로 확대</strong>하는 것을 추천합니다. 또한 수요일 오후 6시 게시가 가장 높은 참여율을 보이고 있습니다.</div>
+  </div>
+  <div class="chart-section">
+    <div class="chart-card">
+      <div class="chart-title">플랫폼별 성과 추이 (7일)<span class="period">2026.02.05 - 02.11</span></div>
+      <div class="bar-chart">
+        ${['월','화','수','목','금','토','일'].map((d,i) => {
+          const h1 = [45,52,68,42,73,80,55][i]; const h2 = [30,38,45,35,48,52,40][i];
+          return `<div class="bar-group"><div class="bar grad-bar" style="height:${h1}%"></div><div class="bar grad-bar-2" style="height:${h2}%;opacity:0.7;margin-top:4px"></div><div class="bar-label">${d}</div></div>`;
+        }).join('')}
+      </div>
+      <div class="legend" style="margin-top:12px">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Instagram</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Facebook</div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">감성 분포</div>
+      <div class="donut-wrap">
+        <div class="donut"><div class="donut-label">82%</div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>긍정 42%</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>중립 29%</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>부정 17%</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>위기 12%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="right-panel-section">
+      <div class="section-title">🔔 실시간 알림</div>
+      <div class="todo-list">
+        <div class="todo-item"><span class="todo-badge badge-urgent">위기</span><span class="todo-text" style="margin-left:8px">부정 댓글 급증 감지 — 브랜드코리아 인스타</span></div>
+        <div class="todo-item"><span class="todo-badge badge-warning">승인</span><span class="todo-text" style="margin-left:8px">2월 프로모션 릴스 — 클라이언트 승인 대기</span></div>
+        <div class="todo-item"><span class="todo-badge badge-info">게시</span><span class="todo-text" style="margin-left:8px">페이스북 이벤트 게시 완료 (14:00)</span></div>
+        <div class="todo-item"><span class="todo-badge badge-success">성과</span><span class="todo-text" style="margin-left:8px">유튜브 쇼츠 조회수 10K 돌파 🎉</span></div>
+      </div>
+    </div>
+    <div class="right-panel-section">
+      <div class="section-title">☑️ 오늘의 할 일</div>
+      <div class="todo-list">
+        <div class="todo-item"><div class="todo-check done"></div><span class="todo-text done">브랜드코리아 인스타 피드 게시</span></div>
+        <div class="todo-item"><div class="todo-check done"></div><span class="todo-text done">2월 콘텐츠 캘린더 초안 작성</span></div>
+        <div class="todo-item"><div class="todo-check"></div><span class="todo-text">스타일카페 유튜브 숏폼 편집</span></div>
+        <div class="todo-item"><div class="todo-check"></div><span class="todo-text">주간 성과 리포트 클라이언트 전달</span></div>
+        <div class="todo-item"><div class="todo-check"></div><span class="todo-text">경쟁사 계정 3월 분석</span></div>
+      </div>
+    </div>
+  </div>
+`;
+
+// CONTENT
+pages.content = () => `
+  <div class="page-header">
+    <div><div class="page-title">콘텐츠 관리</div><div class="page-desc">콘텐츠의 기획, 제작, 검수, 게시까지 전체 라이프사이클을 관리합니다</div></div>
+    <button class="btn btn-primary" style="padding:10px 20px">+ 새 콘텐츠</button>
+  </div>
+  <div class="sub-tabs">
+    <button class="sub-tab active" onclick="showContentTab('calendar')">콘텐츠 캘린더</button>
+    <button class="sub-tab" onclick="showContentTab('kanban')">검수/승인 관리</button>
+    <button class="sub-tab">콘텐츠 제작</button>
+    <button class="sub-tab">콘텐츠 라이브러리</button>
+  </div>
+  <div id="contentTabArea">
+    <div class="calendar-grid">
+      <div class="cal-header">월</div><div class="cal-header">화</div><div class="cal-header">수</div><div class="cal-header">목</div><div class="cal-header">금</div><div class="cal-header">토</div><div class="cal-header">일</div>
+      <div class="cal-cell"><div class="cal-date">3</div></div>
+      <div class="cal-cell"><div class="cal-date">4</div><div class="cal-event published">☑ 인스타 피드</div></div>
+      <div class="cal-cell"><div class="cal-date">5</div><div class="cal-event published">☑ FB 카드뉴스</div><div class="cal-event approved">✓ 유튜브 쇼츠</div></div>
+      <div class="cal-cell"><div class="cal-date">6</div><div class="cal-event published">☑ 인스타 릴스</div></div>
+      <div class="cal-cell"><div class="cal-date">7</div><div class="cal-event published">☑ 인스타 스토리</div></div>
+      <div class="cal-cell"><div class="cal-date">8</div></div>
+      <div class="cal-cell"><div class="cal-date">9</div></div>
+      <div class="cal-cell"><div class="cal-date">10</div><div class="cal-event approved">✓ 인스타 피드</div></div>
+      <div class="cal-cell today"><div class="cal-date">11 (오늘)</div><div class="cal-event review">⏳ 프로모션 릴스</div><div class="cal-event approved">✓ FB 이벤트</div></div>
+      <div class="cal-cell"><div class="cal-date">12</div><div class="cal-event draft">✎ 유튜브 쇼츠</div><div class="cal-event review">⏳ 인스타 피드</div></div>
+      <div class="cal-cell"><div class="cal-date">13</div><div class="cal-event draft">✎ 릴스 초안</div></div>
+      <div class="cal-cell"><div class="cal-date">14</div><div class="cal-event draft">✎ 발렌타인 특별</div></div>
+      <div class="cal-cell"><div class="cal-date">15</div></div>
+      <div class="cal-cell"><div class="cal-date">16</div></div>
+    </div>
+    <div class="ai-insight">
+      <div class="ai-header">✨ AI 콘텐츠 캘린더 제안</div>
+      <div class="ai-body">📌 <strong>2/14 발렌타인데이</strong> — 감성 릴스 + 이벤트 게시 추천 (작년 동일 시즌 참여율 +45%)<br>📌 <strong>2/17~21 사이</strong> 콘텐츠 공백 감지 — 최소 3건의 게시물을 추가 기획하시기 바랍니다<br>📌 수요일 18시 게시가 가장 높은 도달을 기록 중입니다</div>
+    </div>
+  </div>
+`;
+
+// PUBLISH
+pages.publish = () => `
+  <div class="page-header">
+    <div><div class="page-title">게시 운영</div><div class="page-desc">다중 플랫폼 동시/예약 게시를 관리합니다</div></div>
+  </div>
+  <div class="sub-tabs">
+    <button class="sub-tab active">게시 관리</button>
+    <button class="sub-tab">예약 게시</button>
+    <button class="sub-tab">게시 이력</button>
+  </div>
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat-card"><div class="stat-label">오늘 예약</div><div class="stat-value">4</div><div class="stat-change up">예정대로 진행 중</div></div>
+    <div class="stat-card"><div class="stat-label">게시 완료</div><div class="stat-value" style="color:var(--green)">23</div><div class="stat-change up">이번 주 기준</div></div>
+    <div class="stat-card"><div class="stat-label">게시 실패</div><div class="stat-value" style="color:var(--red)">1</div><div class="stat-change down">API 오류 — 재시도 필요</div></div>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>콘텐츠</th><th>플랫폼</th><th>예약 시간</th><th>상태</th><th>AI 추천시간</th><th>액션</th></tr></thead>
+    <tbody>
+      <tr><td style="font-weight:600">봄 신메뉴 출시 릴스</td><td>📸 Instagram</td><td>02.11 18:00</td><td><span class="todo-badge badge-warning">예약대기</span></td><td style="color:var(--purple)">18:00 ✓ 최적</td><td><button class="btn btn-ghost" style="font-size:11px">상세</button></td></tr>
+      <tr><td style="font-weight:600">2월 이벤트 카드뉴스</td><td>📘 Facebook</td><td>02.11 14:00</td><td><span class="todo-badge badge-success">게시완료</span></td><td style="color:var(--green)">14:00 ✓</td><td><button class="btn btn-ghost" style="font-size:11px">상세</button></td></tr>
+      <tr><td style="font-weight:600">브랜드 스토리 #52</td><td>📸 Instagram</td><td>02.11 12:00</td><td><span class="todo-badge badge-success">게시완료</span></td><td>-</td><td><button class="btn btn-ghost" style="font-size:11px">상세</button></td></tr>
+      <tr><td style="font-weight:600">제품 리뷰 쇼츠</td><td>▶️ YouTube</td><td>02.11 20:00</td><td><span class="todo-badge badge-warning">예약대기</span></td><td style="color:var(--purple)">19:30 추천</td><td><button class="btn btn-ghost" style="font-size:11px">상세</button></td></tr>
+      <tr><td style="font-weight:600">주말 이벤트 예고</td><td>📸📘 다중</td><td>02.12 10:00</td><td><span class="todo-badge badge-info">승인완료</span></td><td style="color:var(--purple)">10:00 ✓</td><td><button class="btn btn-ghost" style="font-size:11px">상세</button></td></tr>
+    </tbody>
+  </table>
+`;
+
+// COMMUNITY
+pages.community = () => `
+  <div class="page-header">
+    <div><div class="page-title">커뮤니티 관리</div><div class="page-desc">전 채널 댓글과 멘션을 통합 모니터링합니다</div></div>
+  </div>
+  <div class="sub-tabs">
+    <button class="sub-tab active">통합 인박스</button>
+    <button class="sub-tab">감성 분석 현황</button>
+    <button class="sub-tab">자동 필터/차단 규칙</button>
+    <button class="sub-tab">응대 가이드라인</button>
+  </div>
+  <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+    <div class="stat-card"><div class="stat-label">미처리 댓글</div><div class="stat-value" style="color:var(--red)">12</div></div>
+    <div class="stat-card"><div class="stat-label">오늘 처리 완료</div><div class="stat-value" style="color:var(--green)">34</div></div>
+    <div class="stat-card"><div class="stat-label">위기 경보</div><div class="stat-value" style="color:var(--orange)">1</div></div>
+    <div class="stat-card">
+      <div class="stat-label">감성 분포</div>
+      <div class="sentiment-bars"><div class="s-bar" style="width:42%;background:var(--green)"></div><div class="s-bar" style="width:29%;background:var(--accent)"></div><div class="s-bar" style="width:17%;background:var(--orange)"></div><div class="s-bar" style="width:12%;background:var(--red)"></div></div>
+      <div style="font-size:11px;color:var(--text-muted)">긍정 42% · 중립 29% · 부정 29%</div>
+    </div>
+  </div>
+  <div class="inbox-layout">
+    <div class="inbox-list">
+      <div class="inbox-item active">
+        <div class="inbox-platform">📸 Instagram · 댓글</div>
+        <div class="inbox-user"><span class="sentiment neg"></span>kimhyejin_99</div>
+        <div class="inbox-preview">이번 신메뉴 진짜 별로에요 ㅋㅋ 가격만 올리고...</div>
+      </div>
+      <div class="inbox-item">
+        <div class="inbox-platform">📸 Instagram · 댓글</div>
+        <div class="inbox-user"><span class="sentiment pos"></span>foodie_seoul</div>
+        <div class="inbox-preview">와 이거 진짜 맛있어 보인다! 꼭 먹어볼게요 ❤️</div>
+      </div>
+      <div class="inbox-item">
+        <div class="inbox-platform">📘 Facebook · 멘션</div>
+        <div class="inbox-user"><span class="sentiment neu"></span>이서연</div>
+        <div class="inbox-preview">혹시 이 메뉴 강남점에도 있나요?</div>
+      </div>
+      <div class="inbox-item">
+        <div class="inbox-platform">▶️ YouTube · 댓글</div>
+        <div class="inbox-user"><span class="sentiment pos"></span>맛집탐험대</div>
+        <div class="inbox-preview">영상 퀄리티 미쳤다 구독 눌렀습니다 👍</div>
+      </div>
+      <div class="inbox-item">
+        <div class="inbox-platform">📸 Instagram · DM</div>
+        <div class="inbox-user"><span class="sentiment neg"></span>angry_customer01</div>
+        <div class="inbox-preview">서비스가 왜 이렇게 나빠졌어요? 항의합니다</div>
+      </div>
+    </div>
+    <div class="inbox-detail">
+      <div class="detail-header">
+        <div class="detail-avatar">😠</div>
+        <div class="detail-info"><h4>kimhyejin_99</h4><span>📸 Instagram · 봄 신메뉴 출시 릴스 · 10분 전</span></div>
+        <span class="todo-badge badge-urgent" style="margin-left:auto">부정 감성</span>
+      </div>
+      <div class="detail-msg">"이번 신메뉴 진짜 별로에요 ㅋㅋ 가격만 올리고 양은 줄이고… 정신 차리세요"</div>
+      <div class="ai-draft">
+        <div class="ai-draft-label">✨ AI 응대 초안 (RAG 기반)</div>
+        <div class="ai-draft-text">안녕하세요 고객님 😊 소중한 의견 감사합니다. 불편을 드린 점 진심으로 사과드립니다. 메뉴 가격과 양에 대한 피드백은 담당 부서에 전달하여 개선을 검토하겠습니다. 추가 의견이 있으시면 DM으로 말씀해 주세요 🙏</div>
+      </div>
+      <div class="reply-actions">
+        <button class="btn btn-primary">초안 사용하기</button>
+        <button class="btn btn-ghost">직접 작성</button>
+        <button class="btn btn-ghost">템플릿 선택</button>
+        <button class="btn btn-ghost" style="margin-left:auto;color:var(--red);border-color:rgba(239,68,68,0.3)">숨김 처리</button>
+      </div>
+    </div>
+  </div>
+`;
+
+// ANALYTICS
+pages.analytics = () => `
+  <div class="page-header">
+    <div><div class="page-title">성과 분석</div><div class="page-desc">데이터 기반의 전략적 인사이트를 제공합니다</div></div>
+    <button class="btn btn-primary">📄 PDF 리포트 생성</button>
+  </div>
+  <div class="sub-tabs">
+    <button class="sub-tab active">성과 대시보드</button>
+    <button class="sub-tab">AI 인사이트 리포트</button>
+    <button class="sub-tab">경쟁사 벤치마킹</button>
+    <button class="sub-tab">예측 분석</button>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="kpi-label">총 도달</div><div class="kpi-val">128.4K</div><div class="kpi-delta" style="color:var(--green)">▲ 23.1%</div></div>
+    <div class="kpi-card"><div class="kpi-label">참여율</div><div class="kpi-val">4.8%</div><div class="kpi-delta" style="color:var(--green)">▲ 0.7%</div></div>
+    <div class="kpi-card"><div class="kpi-label">팔로워 증감</div><div class="kpi-val">+892</div><div class="kpi-delta" style="color:var(--green)">▲ 156</div></div>
+    <div class="kpi-card"><div class="kpi-label">영상 조회수</div><div class="kpi-val">45.2K</div><div class="kpi-delta" style="color:var(--green)">▲ 31.5%</div></div>
+    <div class="kpi-card"><div class="kpi-label">클릭률(CTR)</div><div class="kpi-val">2.3%</div><div class="kpi-delta" style="color:var(--red)">▼ 0.2%</div></div>
+  </div>
+  <div class="chart-section">
+    <div class="chart-card">
+      <div class="chart-title">기간별 성과 추이 (30일)<span class="period">클라이언트: 브랜드코리아</span></div>
+      <div class="bar-chart">
+        ${['1주','2주','3주','4주'].map((d,i) => {
+          const h1 = [55,62,48,78][i]; const h2 = [40,48,38,60][i]; const h3 = [25,30,22,42][i];
+          return `<div class="bar-group" style="gap:4px"><div class="bar grad-bar" style="height:${h1}%"></div><div class="bar grad-bar-2" style="height:${h2}%"></div><div class="bar grad-bar-3" style="height:${h3}%"></div><div class="bar-label">${d}</div></div>`;
+        }).join('')}
+      </div>
+      <div class="legend" style="margin-top:16px">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>도달</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>참여</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>클릭</div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">콘텐츠 유형별 성과</div>
+      <div style="display:flex;flex-direction:column;gap:12px;padding-top:12px">
+        ${[['릴스/쇼츠','85%','var(--accent)'],['카드뉴스','62%','var(--green)'],['피드 이미지','48%','var(--orange)'],['스토리','35%','var(--purple)']].map(([name,pct,color]) =>
+          `<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>${name}</span><span style="font-weight:600">${pct}</span></div><div style="height:8px;background:var(--bg-input);border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct};background:${color};border-radius:4px;transition:width 1s ease"></div></div></div>`
+        ).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="ai-insight">
+    <div class="ai-header">✨ AI 인사이트 리포트</div>
+    <div class="ai-body">
+      <strong>핵심 요약 3줄:</strong><br>
+      1️⃣ 릴스 콘텐츠 도달이 전주 대비 <strong>32% 상승</strong>, 전체 도달의 58%를 차지<br>
+      2️⃣ 수요일 18시 게시 시 참여율이 평균보다 <strong>2.1배 높음</strong> — 최적 게시 시간으로 추천<br>
+      3️⃣ 경쟁사 대비 팔로워 증가율 <strong>1.8배 우위</strong>, 다만 스토리 참여율은 <strong>15% 낮아</strong> 개선 필요
+    </div>
+  </div>
+`;
+
+// CLIENTS
+pages.clients = () => `
+  <div class="page-header">
+    <div><div class="page-title">클라이언트 관리</div><div class="page-desc">클라이언트와 SNS 계정을 통합 관리합니다</div></div>
+    <button class="btn btn-primary">+ 클라이언트 추가</button>
+  </div>
+  <div class="sub-tabs">
+    <button class="sub-tab active">클라이언트 목록</button>
+    <button class="sub-tab">계정 연동 관리</button>
+    <button class="sub-tab">브랜드 가이드</button>
+    <button class="sub-tab">커뮤니케이션 이력</button>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>클라이언트</th><th>연동 플랫폼</th><th>콘텐츠 현황</th><th>이번 달 참여율</th><th>담당 운영자</th><th>상태</th></tr></thead>
+    <tbody>
+      <tr><td><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#F59E0B,#EF4444);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff">B</div><div><div style="font-weight:600">브랜드코리아</div><div style="font-size:11px;color:var(--text-muted)">F&B</div></div></div></td><td>📸 📘 ▶️</td><td>게시 23 · 대기 3</td><td style="color:var(--green);font-weight:600">4.8%</td><td>김지현</td><td><span class="todo-badge badge-success">활성</span></td></tr>
+      <tr><td><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#8B5CF6,#EC4899);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff">S</div><div><div style="font-weight:600">스타일카페</div><div style="font-size:11px;color:var(--text-muted)">카페/라이프스타일</div></div></div></td><td>📸 📘</td><td>게시 18 · 대기 1</td><td style="color:var(--green);font-weight:600">3.2%</td><td>박서영</td><td><span class="todo-badge badge-success">활성</span></td></tr>
+      <tr><td><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#06B6D4,#3B82F6);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff">T</div><div><div style="font-weight:600">테크비전</div><div style="font-size:11px;color:var(--text-muted)">IT/SaaS</div></div></div></td><td>📸 ▶️</td><td>게시 12 · 대기 2</td><td style="color:var(--orange);font-weight:600">1.9%</td><td>김지현</td><td><span class="todo-badge badge-success">활성</span></td></tr>
+    </tbody>
+  </table>
+`;
+
+// AI TOOLS
+pages.aitools = () => `
+  <div class="page-header">
+    <div><div class="page-title">AI 도구</div><div class="page-desc">AI 기반 콘텐츠 생성 및 분석 도구를 활용하세요</div></div>
+  </div>
+  <div class="sub-tabs">
+    <button class="sub-tab active">AI 카피라이터</button>
+    <button class="sub-tab">AI 이미지 생성</button>
+    <button class="sub-tab">AI 영상 편집</button>
+    <button class="sub-tab">AI 질의 챗봇</button>
+  </div>
+  <div class="ai-tools-grid">
+    <div class="ai-tool-card">
+      <div class="tool-icon">✍️</div>
+      <div class="tool-name">AI 카피라이터</div>
+      <div class="tool-desc">브랜드별 학습된 톤으로 게시글 카피, 해시태그, 캡션을 자동 생성합니다. 플랫폼에 맞는 복수 초안을 제안받고 편집할 수 있습니다.</div>
+    </div>
+    <div class="ai-tool-card">
+      <div class="tool-icon">🎨</div>
+      <div class="tool-name">AI 이미지 생성</div>
+      <div class="tool-desc">Diffusion 모델 기반으로 브랜드 컬러와 가이드에 맞는 비주얼 시안을 생성합니다. 피드, 스토리, 썸네일 등 다양한 비율을 지원합니다.</div>
+    </div>
+    <div class="ai-tool-card">
+      <div class="tool-icon">🎬</div>
+      <div class="tool-name">AI 영상 편집</div>
+      <div class="tool-desc">긴 영상에서 하이라이트 구간을 자동 탐지하여 릴스/쇼츠용 클립을 생성합니다. 자막 자동 생성과 썸네일 CTR 예측을 제공합니다.</div>
+    </div>
+    <div class="ai-tool-card">
+      <div class="tool-icon">💬</div>
+      <div class="tool-name">AI 질의 챗봇</div>
+      <div class="tool-desc">자연어로 성과 데이터를 질의할 수 있습니다. "지난주 베스트 게시물은?"처럼 물어보면 즉시 답변과 해당 데이터 링크를 제공합니다.</div>
+    </div>
+  </div>
+  <div class="ai-insight" style="margin-top:8px">
+    <div class="ai-header">✨ AI 활용 현황</div>
+    <div class="ai-body">이번 달 AI 도구 활용: 카피 생성 <strong>47회</strong> · 이미지 생성 <strong>23회</strong> · 영상 편집 <strong>8회</strong> · AI 질의 <strong>156회</strong><br>AI 카피 채택률: <strong>72%</strong> (수정 후 사용 포함) · 평균 작업 시간 절감: <strong>62%</strong></div>
+  </div>
+`;
+
+// SETTINGS
+pages.settings = () => `
+  <div class="page-header">
+    <div><div class="page-title">설정</div><div class="page-desc">시스템 설정 및 연동을 관리합니다</div></div>
+  </div>
+  <div class="sub-tabs">
+    <button class="sub-tab active">사용자/권한 관리</button>
+    <button class="sub-tab">알림 설정</button>
+    <button class="sub-tab">플랫폼 API 연동</button>
+    <button class="sub-tab">워크플로우 설정</button>
+    <button class="sub-tab">시스템 로그</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="chart-card">
+      <div class="chart-title">플랫폼 API 연동 상태</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+        ${[['📸 Instagram','연동됨','var(--green)'],['📘 Facebook','연동됨','var(--green)'],['▶️ YouTube','연동됨','var(--green)'],['🎵 TikTok','미연동','var(--text-muted)'],['📝 네이버 블로그','미연동','var(--text-muted)']].map(([name,status,color]) =>
+          `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius-sm)"><span style="font-size:13px;font-weight:500">${name}</span><span style="font-size:12px;font-weight:600;color:${color}">${status === '연동됨' ? '● ' : '○ '}${status}</span></div>`
+        ).join('')}
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">사용자 목록</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+        ${[['김지현','대행사 운영자','활성'],['박서영','대행사 운영자','활성'],['이민수','대행사 관리자','활성'],['최담당','클라이언트 담당자','활성']].map(([name,role,status]) =>
+          `<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-input);border-radius:var(--radius-sm)"><div style="width:32px;height:32px;border-radius:50%;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent-light)">${name[0]}</div><div style="flex:1"><div style="font-size:13px;font-weight:600">${name}</div><div style="font-size:11px;color:var(--text-muted)">${role}</div></div><span class="todo-badge badge-success">${status}</span></div>`
+        ).join('')}
+      </div>
+    </div>
+  </div>
+`;
+
+// ===== NAVIGATION =====
+function navigateTo(page) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+  document.getElementById('contentArea').innerHTML = pages[page]();
+  document.getElementById('contentArea').scrollTop = 0;
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+function toggleChatbot() {
+  document.getElementById('chatbot').classList.toggle('open');
+}
+
+// Init
+navigateTo('dashboard');
+</script>
+</body>
+</html>

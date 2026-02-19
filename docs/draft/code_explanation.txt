@@ -1,0 +1,136 @@
+ ---
+  1. README.md 점검
+
+  현재 상태
+
+  ┌────────────────────────┬──────────────┬───────────────────────────────────────────────────┐
+  │          파일          │     상태     │                      문제점                       │
+  ├────────────────────────┼──────────────┼───────────────────────────────────────────────────┤
+  │ sns-solution/README.md │ 없음         │ 루트에 README가 없음                              │
+  ├────────────────────────┼──────────────┼───────────────────────────────────────────────────┤
+  │ backend/README.md      │ 3줄짜리 스텁 │ 설치/실행 방법, API 문서, 아키텍처 설명 모두 없음 │
+  ├────────────────────────┼──────────────┼───────────────────────────────────────────────────┤
+  │ frontend/README.md     │ 없음         │ 프론트엔드 README 없음                            │
+  └────────────────────────┴──────────────┴───────────────────────────────────────────────────┘
+
+  필요성
+
+  - 루트 README.md: 프로젝트를 처음 접하는 개발자가 프로젝트 개요, 기술 스택, 로컬 환경 구성,
+  실행 방법을 즉시 파악할 수 있어야 합니다. CLAUDE.md에 이 정보가 있지만 CLAUDE.md는 AI 가이드
+  용도이지 사람을 위한 프로젝트 문서가 아닙니다.
+  - backend/README.md: API 서버 단독 실행법, 테스트 명령, 마이그레이션 방법 등이 필요합니다.
+  - frontend/README.md: 별도로 만들지 않아도 되며 루트 README에서 통합 안내하면 충분합니다.
+
+  ---
+  2. requirements.txt 점검
+
+  현재 상태
+
+  - requirements.txt 파일이 존재하지 않습니다.
+  - 백엔드 의존성은 pyproject.toml + Poetry로 관리됩니다.
+  - 프론트엔드 의존성은 package.json + pnpm으로 관리됩니다.
+
+  필요성
+
+  ┌──────────────────────────┬─────────────────────────────────────────────────────────┐
+  │           상황           │                          권장                           │
+  ├──────────────────────────┼─────────────────────────────────────────────────────────┤
+  │ Poetry를 사용하는 환경   │ pyproject.toml만으로 충분 (poetry install)              │
+  ├──────────────────────────┼─────────────────────────────────────────────────────────┤
+  │ Poetry 없이 pip으로 실행 │ requirements.txt 필요                                   │
+  ├──────────────────────────┼─────────────────────────────────────────────────────────┤
+  │ Docker 빌드              │ Dockerfile이 poetry install을 사용하므로 현재 문제 없음 │
+  ├──────────────────────────┼─────────────────────────────────────────────────────────┤
+  │ CI/CD                    │ ci.yml에서 poetry install을 사용하므로 현재 문제 없음   │
+  └──────────────────────────┴─────────────────────────────────────────────────────────┘
+
+  결론: requirements.txt는 Poetry를 설치하지 않고 pip install -r requirements.txt로 빠르게 환경을
+   구성하려는 사용자를 위해 제공하는 것이 좋습니다. poetry export -f requirements.txt --output
+  requirements.txt로 생성할 수 있습니다.
+
+  ---
+  3. 새 환경 생성 절차
+
+  현재 프로젝트에서 새로운 개발 환경을 구성하는 방법은 다음과 같습니다:
+
+  방법 A: Docker Compose (권장, 원클릭)
+
+  git clone <repo> sns-solution && cd sns-solution
+  cp .env.example .env         # 환경 변수 편집
+  docker compose up -d          # 8개 서비스 전체 기동
+
+
+  이 방법은 PostgreSQL, Redis, MinIO, Backend, Celery, Frontend, Nginx, MinIO-init가 모두
+  자동으로 구성됩니다. 별도 설치가 필요 없습니다.
+
+  방법 B: 로컬 개발 (인프라만 Docker)
+
+  # 1. 인프라 (DB, Redis, MinIO)
+  docker compose up -d postgres redis minio minio-init
+
+  # 2. 백엔드
+  cd backend
+  poetry install                    # 또는: pip install -r requirements.txt
+  alembic upgrade head              # DB 마이그레이션
+  uvicorn app.main:app --reload     # http://localhost:8000
+
+  # 3. 프론트엔드
+  cd ../frontend
+  pnpm install
+  pnpm dev                          # http://localhost:3000
+
+  # 4. Celery (별도 터미널)
+  cd backend
+  celery -A app.tasks.celery_app worker --loglevel=info -Q critical,high,medium,low
+  celery -A app.tasks.celery_app beat --loglevel=info
+
+
+  현재 프로젝트의 환경 구성 상태
+
+  항목: .env.example
+  상태: 존재
+  비고: 전체 환경 변수 목록 포함
+  ────────────────────────────────────────
+  항목: .gitignore
+  상태: 존재
+  비고: Python/Node/Docker/IDE 모두 커버
+  ────────────────────────────────────────
+  항목: docker-compose.yml
+  상태: 존재
+  비고: 10개 서비스 (postgres, redis, minio, minio-init, backend, celery-worker, celery-beat,
+    frontend, nginx, prometheus, grafana)
+  ────────────────────────────────────────
+  항목: docker-compose.prod.yml
+  상태: 존재
+  비고: 프로덕션 리소스 제한 설정
+  ────────────────────────────────────────
+  항목: backend/Dockerfile
+  상태: 존재
+  비고: multi-stage (builder → production)
+  ────────────────────────────────────────
+  항목: frontend/Dockerfile
+  상태: 존재
+  비고: multi-stage (builder → production/development)
+  ────────────────────────────────────────
+  항목: backend/pyproject.toml
+  상태: 존재
+  비고: Poetry 의존성 관리
+  ────────────────────────────────────────
+  항목: frontend/package.json
+  상태: 존재
+  비고: pnpm 의존성 관리
+  ────────────────────────────────────────
+  항목: alembic/
+  상태: 존재
+  비고: DB 마이그레이션
+  ────────────────────────────────────────
+  항목: requirements.txt
+  상태: 없음
+  비고: Poetry 없이 pip 사용 시 필요
+  ────────────────────────────────────────
+  항목: 루트 README.md
+  상태: 없음
+  비고: 프로젝트 소개/실행 가이드 필요
+
+  ---
+  루트 README.md와 requirements.txt를 생성할까요?

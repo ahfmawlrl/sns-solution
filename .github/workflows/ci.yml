@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          pip install -e ".[dev]" 2>/dev/null || pip install -r requirements.txt 2>/dev/null || pip install fastapi uvicorn sqlalchemy[asyncio] asyncpg alembic redis celery pydantic-settings python-jose[cryptography] passlib[bcrypt] httpx structlog sentry-sdk aiosqlite pytest pytest-asyncio pytest-mock pytest-cov
+
+      - name: Lint (Ruff)
+        working-directory: backend
+        run: |
+          pip install ruff
+          ruff check app/ --select E,F,W --ignore E501
+
+      - name: Type check (mypy)
+        working-directory: backend
+        continue-on-error: true
+        run: |
+          pip install mypy
+          mypy app/ --ignore-missing-imports --no-strict-optional
+
+      - name: Test with coverage
+        working-directory: backend
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///:memory:
+          REDIS_URL: redis://localhost:6379/0
+          JWT_SECRET_KEY: ci-test-secret
+          APP_ENV: test
+        run: pytest tests/ --cov=app --cov-report=xml --cov-report=term-missing -v
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        working-directory: frontend
+        run: npx tsc --noEmit
+
+      - name: Lint
+        working-directory: frontend
+        continue-on-error: true
+        run: npx eslint . --ext ts,tsx --max-warnings 50
+
+      - name: Test
+        working-directory: frontend
+        run: npx vitest run
+
+      - name: Build
+        working-directory: frontend
+        run: npx vite build

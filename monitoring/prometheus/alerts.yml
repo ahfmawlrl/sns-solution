@@ -1,0 +1,39 @@
+groups:
+  - name: sns-solution-alerts
+    rules:
+      # API response time > 800ms for 5 minutes
+      - alert: HighAPILatency
+        expr: http_request_duration_seconds{quantile="0.95"} > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency (P95 > 800ms)"
+          description: "API P95 latency is {{ $value }}s"
+
+      # Error rate > 5%
+      - alert: HighErrorRate
+        expr: rate(http_requests_errors_total[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate (> 5%)"
+
+      # Redis memory > 80%
+      - alert: RedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage > 80%"
+
+      # PostgreSQL disk > 80%
+      - alert: PostgresDiskUsage
+        expr: pg_database_size_bytes / pg_tablespace_size_bytes > 0.8
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL disk usage > 80%"

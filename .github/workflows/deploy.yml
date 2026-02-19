@@ -1,0 +1,58 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        run: docker build -t sns-solution-backend:${{ github.sha }} ./backend
+
+      - name: Build frontend image
+        run: docker build -t sns-solution-frontend:${{ github.sha }} ./frontend
+
+  deploy-staging:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        env:
+          DEPLOY_HOST: ${{ secrets.STAGING_HOST }}
+          DEPLOY_KEY: ${{ secrets.STAGING_SSH_KEY }}
+        run: |
+          echo "Deploying to staging..."
+          # docker compose -f docker-compose.prod.yml build
+          # docker compose -f docker-compose.prod.yml push
+          # ssh staging "cd /app && docker compose pull && docker compose up -d"
+
+  deploy-production:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to production
+        env:
+          DEPLOY_HOST: ${{ secrets.PRODUCTION_HOST }}
+          DEPLOY_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+        run: |
+          echo "Deploying to production..."
+          # docker compose -f docker-compose.prod.yml build
+          # docker compose -f docker-compose.prod.yml push
+          # ssh production "cd /app && docker compose pull && docker compose up -d"
