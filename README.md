@@ -147,3 +147,11 @@ pnpm type-check                   # TypeScript 검사
 ## 라이선스
 
 Private - All rights reserved.
+
+## Login 정보
+브라우저에서 로그인:
+  1. http://localhost:3000 접속
+  2. 로그인 정보 입력:
+    - 이메일: admin@sns.com
+    - 비밀번호: Admin1234!
+

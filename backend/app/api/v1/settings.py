@@ -5,9 +5,11 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.dependencies import get_current_user, get_db, require_role
+from app.integrations.meta.client import MetaGraphClient
 from app.models.audit_log import AuditLog
-from app.models.platform_account import PlatformAccount
+from app.models.platform_account import Platform, PlatformAccount
 from app.models.user import User
 from app.schemas.common import APIResponse, PaginationMeta
 from app.schemas.notification import (
@@ -16,6 +18,7 @@ from app.schemas.notification import (
     PlatformTestRequest,
     WorkflowSettings,
 )
+from app.utils.encryption import TokenEncryptor
 
 router = APIRouter()
 
@@ -54,11 +57,50 @@ async def test_platform_connection(
     account = await db.get(PlatformAccount, body.platform_account_id)
     if not account:
         return APIResponse(status="error", message="Platform account not found")
-    # Stub: real API test in STEP 16-17
+
+    # ── Decrypt stored token ─────────────────────────────────────────────────
+    if not settings.ENCRYPTION_KEY:
+        return APIResponse(status="error", message="ENCRYPTION_KEY is not configured on the server")
+    try:
+        encryptor = TokenEncryptor(settings.ENCRYPTION_KEY)
+        token = encryptor.decrypt(account.access_token)
+    except Exception:
+        return APIResponse(status="error", message="Token decryption failed — re-register the access token")
+
+    # ── Call the platform API ────────────────────────────────────────────────
+    me: dict = {}
+    connected = False
+    error_detail: str | None = None
+
+    if account.platform.value in (Platform.INSTAGRAM.value, Platform.FACEBOOK.value):
+        try:
+            async with MetaGraphClient(token) as client:
+                me = await client.get_me()
+            connected = "id" in me
+        except Exception as exc:
+            connected = False
+            error_detail = str(exc)
+    else:
+        # YouTube and other platforms: fall back to stored flag until implemented
+        connected = account.is_connected
+        me = {"note": "Live test not yet implemented for this platform"}
+
+    # ── Sync is_connected to DB ──────────────────────────────────────────────
+    account.is_connected = connected
+    await db.commit()
+
+    response_data: dict = {
+        "platform": account.platform.value,
+        "connected": connected,
+        "account_info": me if connected else None,
+    }
+    if error_detail:
+        response_data["error_detail"] = error_detail
+
     return APIResponse(
-        status="success",
-        data={"platform": account.platform.value, "connected": account.is_connected},
-        message="Connection test passed (stub)",
+        status="success" if connected else "error",
+        data=response_data,
+        message="Connection test passed" if connected else "Connection test failed",
     )
 
 
